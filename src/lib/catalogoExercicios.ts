@@ -51,6 +51,12 @@ export interface ExercicioDoCatalogo {
   como: string[];
   /** O erro mais comum, ou o que mais importa. */
   dica: string;
+  /**
+   * Uma ilustração única, no lugar do par começo/fim. Caminho dentro de
+   * `public`. É o caso dos aparelhos que não existem no banco público e
+   * entraram aqui por uma imagem só.
+   */
+  foto?: string;
 }
 
 export const GRUPO_LABEL: Record<Grupo, string> = {
@@ -104,7 +110,8 @@ const e = (
   composto: boolean,
   como: string[],
   dica: string,
-): ExercicioDoCatalogo => ({ id, nome, grupo, equip, nivel, composto, como, dica });
+  foto?: string,
+): ExercicioDoCatalogo => ({ id, nome, grupo, equip, nivel, composto, como, dica, foto });
 
 export const CATALOGO: ExercicioDoCatalogo[] = [
   /* ------------------------------------------------------------------ peito */
@@ -123,7 +130,11 @@ export const CATALOGO: ExercicioDoCatalogo[] = [
   e("Machine_Bench_Press", "Supino na máquina (sentado)", "peito", "maquina", "iniciante", true,
     ["Ajuste o banco para que as pegadas fiquem na altura do meio do peito e sente com as costas coladas.", "Empurre as pegadas para frente até quase estender os braços e volte devagar."],
     "Ótimo para aprender o movimento: a máquina guia a trajetória."),
-  e("Smith_Machine_Bench_Press", "Supino reto na máquina (deitado)", "peito", "maquina", "iniciante", true,
+  e("supino-maquina-deitado", "Supino reto na máquina (deitado)", "peito", "maquina", "iniciante", true,
+    ["Deite no banco com os olhos entre as pegadas, pés firmes no chão e as costas apoiadas.", "Empurre as pegadas para cima até quase estender os braços e volte devagar, até sentir o peito alongar."],
+    "A máquina guia o movimento: dá para empurrar forte sem se preocupar com o equilíbrio da barra.",
+    "/exercicios/supino-maquina-deitado/ilustracao.png"),
+  e("Smith_Machine_Bench_Press", "Supino reto no Smith (barra guiada)", "peito", "maquina", "iniciante", true,
     ["Deite no banco com os olhos sob a barra, pés firmes no chão e as escápulas juntas. Destrave a barra girando os punhos.", "Desça a barra até tocar de leve o meio do peito e empurre de volta até quase estender os braços."],
     "A barra corre nos trilhos: dá para empurrar sem se preocupar com o equilíbrio. Trave a barra no gancho antes de soltar."),
   e("Butterfly", "Voador (peck deck)", "peito", "maquina", "iniciante", false,

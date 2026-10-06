@@ -355,6 +355,15 @@ button:disabled { opacity: 0.45; cursor: default; }
   background: #fff;
   border-radius: 10px;
 }
+/* Ilustração única: ocupa a largura toda, sem a legenda de começo e fim. */
+.fotos.uma {
+  grid-template-columns: 1fr;
+}
+.fotos.uma img {
+  aspect-ratio: 1 / 1;
+  max-height: 280px;
+}
+
 .fotos figcaption {
   font-size: 0.78rem;
   color: var(--suave);

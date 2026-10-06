@@ -415,24 +415,33 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
 
           {catalogo && (
             <>
-              <div className="fotos">
-                <figure>
-                  <img
-                    src={`/exercicios/${catalogo.id}/0.jpg`}
-                    alt={`${catalogo.nome}: começo do movimento`}
-                    loading="lazy"
-                  />
-                  <figcaption>Começo</figcaption>
-                </figure>
-                <figure>
-                  <img
-                    src={`/exercicios/${catalogo.id}/1.jpg`}
-                    alt={`${catalogo.nome}: fim do movimento`}
-                    loading="lazy"
-                  />
-                  <figcaption>Fim</figcaption>
-                </figure>
-              </div>
+              {/* Alguns aparelhos entraram com uma ilustração só, sem o par começo/fim. */}
+              {catalogo.foto ? (
+                <div className="fotos uma">
+                  <figure>
+                    <img src={catalogo.foto} alt={catalogo.nome} loading="lazy" />
+                  </figure>
+                </div>
+              ) : (
+                <div className="fotos">
+                  <figure>
+                    <img
+                      src={`/exercicios/${catalogo.id}/0.jpg`}
+                      alt={`${catalogo.nome}: começo do movimento`}
+                      loading="lazy"
+                    />
+                    <figcaption>Começo</figcaption>
+                  </figure>
+                  <figure>
+                    <img
+                      src={`/exercicios/${catalogo.id}/1.jpg`}
+                      alt={`${catalogo.nome}: fim do movimento`}
+                      loading="lazy"
+                    />
+                    <figcaption>Fim</figcaption>
+                  </figure>
+                </div>
+              )}
               <details>
                 <summary>Como fazer</summary>
                 <ol className="passos">

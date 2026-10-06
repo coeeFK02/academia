@@ -15,9 +15,7 @@ a as (
 insert into public.academia_exercicios (user_id, treino_id, nome, series, reps, carga_kg, ordem, ref)
 select a.user_id, a.id, v.nome, v.series, 10, null, v.ordem, v.ref
 from a cross join (values
-  -- Sem foto: o banco público não tem a máquina deitada de pegadas, e foto de
-  -- outro aparelho confunde mais do que ajuda.
-  ('Supino reto na máquina (deitado)', 3, 0, null),
+  ('Supino reto na máquina (deitado)', 3, 0, 'supino-maquina-deitado'),
   ('Supino inclinado com halteres', 3, 1, 'Incline_Dumbbell_Press'),
   ('Crucifixo na polia', 3, 2, 'Cable_Crossover'),
   ('Desenvolvimento com halteres (ombros)', 3, 3, 'Dumbbell_Shoulder_Press'),
