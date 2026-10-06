@@ -100,10 +100,13 @@ export function Inicio({ treinos, carregando, onComecar, onEditar, onNovo }: Pro
               <strong>{naSemana}</strong>
               <span className="suave">{naSemana === 1 ? "treino" : "treinos"}</span>
             </div>
-            <div>
-              <strong>{volumeSemana.toLocaleString("pt-BR")}</strong>
-              <span className="suave">kg levantados</span>
-            </div>
+            {/* Sem carga registrada o volume é sempre zero; aí ele não aparece. */}
+            {volumeSemana > 0 && (
+              <div>
+                <strong>{volumeSemana.toLocaleString("pt-BR")}</strong>
+                <span className="suave">kg levantados</span>
+              </div>
+            )}
           </div>
         </section>
       )}

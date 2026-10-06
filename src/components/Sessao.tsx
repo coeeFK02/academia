@@ -6,14 +6,12 @@ import { erroLegivel } from "@/lib/erros";
 import { desfazerSerie, garantirSessao, marcarConclusao, registrarSerie } from "@/lib/repositorio";
 import {
   dataRelativa,
-  descreverSerie,
   duracaoEmMinutos,
   ehRecorde,
   hojeISO,
   seriesDo,
   sessaoDo,
   ultimaVezDoExercicio,
-  valorPadrao,
   volumeDa,
   type Exercicio,
   type Serie,
@@ -29,8 +27,8 @@ interface Props {
   onErro: (mensagem: string) => void;
 }
 
-const DESCANSOS = [45, 60, 90, 120];
-const CHAVE_DESCANSO = "academia:descanso";
+/** O descanso é sempre este: um valor a menos para escolher no meio do treino. */
+const DESCANSO_SEGUNDOS = 90;
 /** Linhas gravadas só no navegador, à espera da resposta do servidor. */
 const PROVISORIA = "provisoria-";
 
@@ -128,89 +126,14 @@ function useTelaAcesa() {
 }
 
 /* ==========================================================================
-   O contador com + e −: dá para usar com a mão suada, sem abrir o teclado
-   ========================================================================== */
-
-interface ContadorProps {
-  rotulo: string;
-  valor: number | null;
-  passo: number;
-  minimo: number;
-  /** Na carga, vazio quer dizer peso do corpo. Nas repetições não existe vazio. */
-  aceitaVazio?: boolean;
-  textoVazio?: string;
-  sufixo?: string;
-  onMudar: (valor: number | null) => void;
-}
-
-function Contador({
-  rotulo,
-  valor,
-  passo,
-  minimo,
-  aceitaVazio = false,
-  textoVazio = "—",
-  sufixo = "",
-  onMudar,
-}: ContadorProps) {
-  const [digitando, setDigitando] = useState(false);
-  const [texto, setTexto] = useState("");
-
-  function abrir() {
-    setTexto(valor === null ? "" : String(valor));
-    setDigitando(true);
-  }
-
-  function fechar() {
-    const numero = Number(texto.replace(",", "."));
-    if (texto.trim() === "") onMudar(aceitaVazio ? null : minimo);
-    else if (Number.isFinite(numero)) onMudar(Math.max(minimo, numero));
-    setDigitando(false);
-  }
-
-  function somar(delta: number) {
-    const proximo = Math.round(((valor ?? 0) + delta) * 100) / 100;
-    if (proximo < minimo) onMudar(aceitaVazio ? null : minimo);
-    else onMudar(proximo);
-  }
-
-  return (
-    <div className="contador">
-      <span className="contador-rotulo">{rotulo}</span>
-      <div className="contador-linha">
-        <button type="button" className="contador-botao" aria-label={`Diminuir ${rotulo}`} onClick={() => somar(-passo)}>
-          −
-        </button>
-        {digitando ? (
-          <input
-            className="contador-entrada"
-            type="text"
-            inputMode="decimal"
-            autoFocus
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            onBlur={fechar}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") fechar();
-            }}
-          />
-        ) : (
-          <button type="button" className="contador-valor" onClick={abrir} aria-label={`Digitar ${rotulo}`}>
-            {valor === null ? textoVazio : `${valor}${sufixo}`}
-          </button>
-        )}
-        <button type="button" className="contador-botao" aria-label={`Aumentar ${rotulo}`} onClick={() => somar(passo)}>
-          +
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ==========================================================================
    O treino em andamento
    ========================================================================== */
 
+/**
+ * Uma série é só uma série: nem carga, nem repetições para escolher na hora.
+ * As repetições são as do plano do exercício e o peso não é registrado — o que
+ * esta tela faz é contar o que já foi feito e marcar o tempo de descanso.
+ */
 export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
   const hoje = hojeISO();
   const sessao = sessaoDo(treino, hoje);
@@ -219,23 +142,12 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
   const [escolhido, setEscolhido] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(0);
 
-  const [segundosDeDescanso, setSegundosDeDescanso] = useState(90);
   const [descansoAte, setDescansoAte] = useState<number | null>(null);
   const [agora, setAgora] = useState(() => Date.now());
   const avisou = useRef(false);
   const idDaSessaoEmCurso = useRef<Promise<string> | null>(null);
 
   useTelaAcesa();
-
-  // A preferência só pode ser lida depois da montagem: no servidor não existe localStorage.
-  useEffect(() => {
-    try {
-      const guardado = Number(localStorage.getItem(CHAVE_DESCANSO));
-      if (guardado > 0) setSegundosDeDescanso(guardado);
-    } catch {
-      // Navegação privada ou armazenamento bloqueado: fica o padrão.
-    }
-  }, []);
 
   useEffect(() => {
     if (descansoAte === null) return;
@@ -254,31 +166,14 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
 
   /* ---------------------------------------------------------------- o que fazer agora */
 
-  const proximoPendente = (): Exercicio | null => {
-    const pendentes = treino.exercicios.filter((e) => seriesDo(sessao, e.id).length < e.series);
-    return pendentes.find((e) => !pulados.includes(e.id)) ?? pendentes[0] ?? null;
-  };
-
-  const proximo = proximoPendente();
+  const pendentes = treino.exercicios.filter((e) => seriesDo(sessao, e.id).length < e.series);
+  const proximo = pendentes.find((e) => !pulados.includes(e.id)) ?? pendentes[0] ?? null;
   const exercicio: Exercicio | null =
     treino.exercicios.find((e) => e.id === escolhido) ?? proximo ?? treino.exercicios[0] ?? null;
 
   const catalogo = exercicio?.ref ? CATALOGO.find((c) => c.id === exercicio.ref) : undefined;
   const feitas = exercicio ? seriesDo(sessao, exercicio.id) : [];
   const anterior = exercicio ? ultimaVezDoExercicio(treino, exercicio.id, hoje) : null;
-  const padrao = exercicio ? valorPadrao(treino, exercicio, sessao) : { reps: 10, carga: null };
-
-  const [carga, setCarga] = useState<number | null>(padrao.carga);
-
-  // As repetições são as do plano do exercício e não se escolhem na hora; o que
-  // muda de uma série para a outra é a carga.
-  const repsDoPlano = exercicio?.reps ?? 0;
-
-  // Trocou de exercício, ou mais uma série entrou: a sugestão de carga acompanha.
-  useEffect(() => {
-    setCarga(padrao.carga);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exercicio?.id, feitas.length]);
 
   const totalSeries = treino.exercicios.reduce((soma, e) => soma + e.series, 0);
   const totalFeitas = treino.exercicios.reduce((soma, e) => soma + seriesDo(sessao, e.id).length, 0);
@@ -291,7 +186,7 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
   function comecarDescanso() {
     avisou.current = false;
     setAgora(Date.now());
-    setDescansoAte(Date.now() + segundosDeDescanso * 1000);
+    setDescansoAte(Date.now() + DESCANSO_SEGUNDOS * 1000);
   }
 
   function pararDescanso() {
@@ -301,15 +196,6 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
   function esticarDescanso(segundos: number) {
     avisou.current = false;
     setDescansoAte((ate) => Math.max(ate ?? Date.now(), Date.now()) + segundos * 1000);
-  }
-
-  function escolherDescanso(segundos: number) {
-    setSegundosDeDescanso(segundos);
-    try {
-      localStorage.setItem(CHAVE_DESCANSO, String(segundos));
-    } catch {
-      // Sem armazenamento: vale só para este treino.
-    }
   }
 
   /* ---------------------------------------------------------------- gravação */
@@ -343,15 +229,13 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
   async function marcarSerie() {
     if (!exercicio || feitas.length >= exercicio.series) return;
 
-    const repsFinal = Math.max(0, Math.min(1000, Math.round(exercicio.reps)));
-    const cargaFinal = carga === null || !Number.isFinite(carga) ? null : Math.max(0, carga);
     const numero = feitas.length + 1;
     const provisoria: Serie = {
       id: `${PROVISORIA}${Date.now()}`,
       exercicio_id: exercicio.id,
       numero,
-      reps: repsFinal,
-      carga_kg: cargaFinal,
+      reps: exercicio.reps,
+      carga_kg: null,
     };
 
     // A série aparece na tela antes de o servidor responder: quem está treinando
@@ -365,7 +249,7 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
 
     try {
       const sessaoId = await idDaSessao();
-      const real = await registrarSerie(sessaoId, exercicio.id, numero, repsFinal, cargaFinal);
+      const real = await registrarSerie(sessaoId, exercicio.id, numero, exercicio.reps, null);
       aplicar((treinos) =>
         comSessao(treinos, treino.id, hoje, (s) => ({
           ...s,
@@ -451,14 +335,16 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
               <strong>{totalFeitas}</strong>
               <span className="suave">de {totalSeries} séries</span>
             </div>
-            <div>
-              <strong>{volume.toLocaleString("pt-BR")}</strong>
-              <span className="suave">kg no total</span>
-            </div>
             {minutos !== null && (
               <div>
                 <strong>{minutos}</strong>
                 <span className="suave">minutos</span>
+              </div>
+            )}
+            {volume > 0 && (
+              <div>
+                <strong>{volume.toLocaleString("pt-BR")}</strong>
+                <span className="suave">kg no total</span>
               </div>
             )}
           </div>
@@ -468,13 +354,13 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
           <h3>O que você fez</h3>
           <ul className="lista">
             {treino.exercicios.map((e) => {
-              const series = seriesDo(sessao, e.id);
+              const quantas = seriesDo(sessao, e.id).length;
               return (
                 <li key={e.id} className="item">
                   <div>
                     <strong>{e.nome}</strong>
                     <p className="suave">
-                      {series.length === 0 ? "não feito" : series.map(descreverSerie).join(" · ")}
+                      {quantas === 0 ? "não feito" : `${quantas} de ${e.series} séries · ${e.reps} repetições`}
                     </p>
                   </div>
                 </li>
@@ -531,11 +417,19 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
             <>
               <div className="fotos">
                 <figure>
-                  <img src={`/exercicios/${catalogo.id}/0.jpg`} alt={`${catalogo.nome}: começo do movimento`} loading="lazy" />
+                  <img
+                    src={`/exercicios/${catalogo.id}/0.jpg`}
+                    alt={`${catalogo.nome}: começo do movimento`}
+                    loading="lazy"
+                  />
                   <figcaption>Começo</figcaption>
                 </figure>
                 <figure>
-                  <img src={`/exercicios/${catalogo.id}/1.jpg`} alt={`${catalogo.nome}: fim do movimento`} loading="lazy" />
+                  <img
+                    src={`/exercicios/${catalogo.id}/1.jpg`}
+                    alt={`${catalogo.nome}: fim do movimento`}
+                    loading="lazy"
+                  />
                   <figcaption>Fim</figcaption>
                 </figure>
               </div>
@@ -557,7 +451,8 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
 
           {anterior && (
             <p className="suave referencia">
-              Última vez ({dataRelativa(anterior.data, hoje)}): {anterior.series.map(descreverSerie).join(" · ")}
+              Última vez: {dataRelativa(anterior.data, hoje)} · {anterior.series.length}{" "}
+              {anterior.series.length === 1 ? "série" : "séries"}
             </p>
           )}
 
@@ -569,29 +464,10 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
             ))}
           </div>
 
-          {feitas.length > 0 && (
-            <p className="suave">Hoje: {feitas.map(descreverSerie).join(" · ")}</p>
-          )}
-
           {feitas.length < exercicio.series ? (
-            <>
-              <div className="contadores">
-                <Contador
-                  rotulo="Carga"
-                  valor={carga}
-                  passo={2.5}
-                  minimo={0}
-                  aceitaVazio
-                  textoVazio="a escolher"
-                  sufixo=" kg"
-                  onMudar={setCarga}
-                />
-              </div>
-              <button className="primario grande" onClick={() => void marcarSerie()}>
-                Marcar série {feitas.length + 1} · {repsDoPlano} reps ×{" "}
-                {carga === null ? "sem carga" : `${carga} kg`}
-              </button>
-            </>
+            <button className="primario grande" onClick={() => void marcarSerie()}>
+              Marcar série {feitas.length + 1}
+            </button>
           ) : (
             <p className="pronto-texto">✓ Exercício completo</p>
           )}
@@ -642,22 +518,6 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
             );
           })}
         </ul>
-      </section>
-
-      <section className="cartao">
-        <p className="rotulo">Descanso entre séries</p>
-        <div className="opcoes">
-          {DESCANSOS.map((segundos) => (
-            <button
-              key={segundos}
-              className={`opcao ${segundos === segundosDeDescanso ? "ativa" : ""}`}
-              onClick={() => escolherDescanso(segundos)}
-            >
-              {segundos}s
-            </button>
-          ))}
-        </div>
-        <p className="suave">O cronômetro começa sozinho a cada série marcada.</p>
       </section>
 
       {descansoAte !== null && (
