@@ -15,7 +15,9 @@ a as (
 insert into public.academia_exercicios (user_id, treino_id, nome, series, reps, carga_kg, ordem, ref)
 select a.user_id, a.id, v.nome, v.series, 10, null, v.ordem, v.ref
 from a cross join (values
-  ('Supino na máquina', 3, 0, 'Machine_Bench_Press'),
+  -- A foto é a do supino com barra: é a única deitada do catálogo, e o que
+  -- importa aqui é a posição do corpo, não o equipamento.
+  ('Supino reto na máquina (deitado)', 3, 0, 'Barbell_Bench_Press_-_Medium_Grip'),
   ('Supino inclinado com halteres', 3, 1, 'Incline_Dumbbell_Press'),
   ('Crucifixo na polia', 3, 2, 'Cable_Crossover'),
   ('Desenvolvimento com halteres (ombros)', 3, 3, 'Dumbbell_Shoulder_Press'),
