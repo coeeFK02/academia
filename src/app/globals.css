@@ -63,7 +63,7 @@ code {
   max-width: var(--largura);
   margin: 0 auto;
   min-height: 100dvh;
-  padding: 0 16px calc(32px + env(safe-area-inset-bottom));
+  padding: calc(12px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom));
 }
 
 .coluna {
@@ -75,19 +75,6 @@ code {
 
 /* Espaço para as barras fixas do rodapé não taparem o último botão. */
 .sessao { padding-bottom: 104px; }
-
-.topo {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 0 10px;
-  background: color-mix(in srgb, var(--fundo) 92%, transparent);
-  backdrop-filter: blur(10px);
-}
-.marca { font-size: 1.05rem; }
 
 section {
   display: flex;
@@ -326,7 +313,7 @@ button:disabled { opacity: 0.45; cursor: default; }
 
 .barra-sessao {
   position: sticky;
-  top: 54px;
+  top: 0;
   z-index: 9;
   display: flex;
   justify-content: space-between;

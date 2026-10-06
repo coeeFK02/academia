@@ -124,15 +124,8 @@ export function App() {
 
   return (
     <div className="app">
-      <header className="topo">
-        <button className="link marca" onClick={voltarAoInicio}>
-          Academia
-        </button>
-        <button className="link" onClick={() => void supabase()?.auth.signOut()}>
-          Sair
-        </button>
-      </header>
-
+      {/* Sem barra no topo: o "Sair" da conta ficava ao lado do "← Sair" do treino,
+          dois botões com o mesmo nome e sentidos diferentes. */}
       {erro && (
         <div className="aviso" role="alert">
           <p>{erro}</p>
