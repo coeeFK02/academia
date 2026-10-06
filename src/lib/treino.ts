@@ -68,11 +68,6 @@ export function volumeDa(sessao: Sessao | undefined): number {
   return Math.round(sessao.series.reduce((soma, s) => soma + (s.carga_kg ?? 0) * s.reps, 0));
 }
 
-/** O primeiro exercício que ainda tem série sobrando. Null quando tudo foi feito. */
-export function proximoExercicio(treino: Treino, sessao: Sessao | undefined): Exercicio | null {
-  return treino.exercicios.find((e) => seriesDo(sessao, e.id).length < e.series) ?? null;
-}
-
 /** A sessão de hoje existe e ainda não foi concluída. */
 export function emAndamento(treino: Treino, hoje: string): boolean {
   const sessao = sessaoDo(treino, hoje);
@@ -109,60 +104,6 @@ export function ehRecorde(treino: Treino, sessao: Sessao): boolean {
     .filter((s) => s.concluida_em && s.data < sessao.data)
     .map((s) => volumeDa(s));
   return volume > 0 && anteriores.length > 0 && volume > Math.max(...anteriores);
-}
-
-/**
- * Carga e repetições sugeridas para a próxima série: o que foi feito na última
- * vez que esse exercício apareceu, ou o planejado se nunca foi feito.
- */
-export function valorPadrao(
-  treino: Treino,
-  exercicio: Exercicio,
-  sessaoAtual: Sessao | undefined,
-): { reps: number; carga: number | null } {
-  const daSessao = seriesDo(sessaoAtual, exercicio.id);
-  const ultima = daSessao[daSessao.length - 1];
-  if (ultima) return { reps: ultima.reps, carga: ultima.carga_kg };
-
-  const anterior = ultimaVezDoExercicio(treino, exercicio.id, sessaoAtual?.data ?? "");
-  if (anterior) {
-    const ultimaAnterior = anterior.series[anterior.series.length - 1];
-    return { reps: ultimaAnterior.reps, carga: ultimaAnterior.carga_kg };
-  }
-  return { reps: exercicio.reps, carga: exercicio.carga_kg };
-}
-
-export interface LinhaDoHistorico {
-  sessaoId: string;
-  data: string;
-  treinoId: string;
-  treino: string;
-  feitas: number;
-  total: number;
-  volume: number;
-  concluida: boolean;
-}
-
-/** As últimas idas, da mais recente para a mais antiga. Só entra o que teve série ou foi concluído. */
-export function historico(treinos: Treino[], limite = 10): LinhaDoHistorico[] {
-  const linhas: LinhaDoHistorico[] = [];
-  for (const treino of treinos) {
-    const total = treino.exercicios.reduce((soma, e) => soma + e.series, 0);
-    for (const sessao of treino.sessoes) {
-      if (sessao.series.length === 0 && !sessao.concluida_em) continue;
-      linhas.push({
-        sessaoId: sessao.id,
-        data: sessao.data,
-        treinoId: treino.id,
-        treino: treino.nome,
-        feitas: sessao.series.length,
-        total,
-        volume: volumeDa(sessao),
-        concluida: Boolean(sessao.concluida_em),
-      });
-    }
-  }
-  return linhas.sort((a, b) => b.data.localeCompare(a.data)).slice(0, limite);
 }
 
 /** "2026-10-06" → "06/10". Sem `new Date`, para não depender do fuso. */
@@ -231,11 +172,6 @@ export function ultimaVezDoExercicio(
     if (series.length > 0) return { data: sessao.data, series };
   }
   return null;
-}
-
-/** "12 × 20 kg" de cada série, ou "12 reps" quando foi sem carga. */
-export function descreverSerie(serie: Serie): string {
-  return serie.carga_kg ? `${serie.reps} × ${serie.carga_kg} kg` : `${serie.reps} reps`;
 }
 
 /** Quanto tempo a ida durou, em minutos. Null enquanto não terminou. */

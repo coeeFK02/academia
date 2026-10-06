@@ -2,17 +2,16 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { configurado, supabase } from "@/lib/supabase";
+import { carregarConfig, supabase } from "@/lib/supabase";
 import { erroLegivel } from "@/lib/erros";
-import { carregarTreinos, criarTreino } from "@/lib/repositorio";
+import { carregarTreinos } from "@/lib/repositorio";
 import { type Treino } from "@/lib/treino";
 import { Login } from "./Login";
 import { Inicio } from "./Inicio";
-import { EditorTreino } from "./EditorTreino";
 import { Sessao } from "./Sessao";
 
-/** A tela aberta. Só guarda ids: os dados vêm de `treinos`, sempre atualizados. */
-type Tela = { nome: "inicio" } | { nome: "editar"; treinoId: string } | { nome: "sessao"; treinoId: string };
+/** A tela aberta. Só guarda o id: os dados vêm de `treinos`, sempre atualizados. */
+type Tela = { nome: "inicio" } | { nome: "sessao"; treinoId: string };
 
 export function App() {
   const [sessao, setSessao] = useState<Session | null | undefined>(undefined);
@@ -20,12 +19,31 @@ export function App() {
   const [carregando, setCarregando] = useState(true);
   const [tela, setTela] = useState<Tela>({ nome: "inicio" });
   const [erro, setErro] = useState("");
+  /** null enquanto a configuração do Supabase ainda está sendo lida do servidor. */
+  const [configurado, setConfigurado] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => setSessao(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_evento, atual) => setSessao(atual));
-    return () => data.subscription.unsubscribe();
+    let vivo = true;
+    let inscricao: { unsubscribe(): void } | null = null;
+
+    (async () => {
+      const config = await carregarConfig();
+      if (!vivo) return;
+
+      const cliente = config ? supabase() : null;
+      setConfigurado(Boolean(cliente));
+      if (!cliente) return;
+
+      const { data } = await cliente.auth.getSession();
+      if (!vivo) return;
+      setSessao(data.session);
+      inscricao = cliente.auth.onAuthStateChange((_evento, atual) => setSessao(atual)).data.subscription;
+    })();
+
+    return () => {
+      vivo = false;
+      inscricao?.unsubscribe();
+    };
   }, []);
 
   const recarregar = useCallback(async () => {
@@ -77,23 +95,21 @@ export function App() {
   /** Muda os treinos já carregados sem ir ao servidor. */
   const aplicar = useCallback((mudar: (treinos: Treino[]) => Treino[]) => setTreinos(mudar), []);
 
-  async function novoTreino() {
-    try {
-      const id = await criarTreino(treinos.length);
-      await recarregar();
-      abrir({ nome: "editar", treinoId: id });
-    } catch (falha) {
-      setErro(erroLegivel(falha, "Não foi possível criar o treino."));
-    }
-  }
+  // Ainda lendo a configuração: nada na tela, para não piscar uma mensagem de erro que pode não ser verdade.
+  if (configurado === null) return <main className="centro" />;
 
-  if (!configurado) {
+  if (configurado === false) {
     return (
       <main className="centro">
         <div className="cartao">
           <h1>Academia</h1>
-          <p>
-            Falta apontar para o Supabase. Copie o <code>.env.example</code> para <code>.env.local</code> e preencha.
+          <p>Falta apontar para o Supabase.</p>
+          <p className="suave">
+            Aqui na sua máquina: copie o <code>.env.example</code> para <code>.env.local</code> e preencha.
+          </p>
+          <p className="suave">
+            No site publicado: defina <code>SUPABASE_URL</code> e <code>SUPABASE_ANON_KEY</code> nas variáveis do
+            serviço e publique de novo.
           </p>
         </div>
       </main>
@@ -104,7 +120,7 @@ export function App() {
   if (sessao === undefined) return <main className="centro" />;
   if (sessao === null) return <Login />;
 
-  const treinoDaTela = tela.nome !== "inicio" ? treinos.find((t) => t.id === tela.treinoId) : undefined;
+  const treinoDaTela = tela.nome === "sessao" ? treinos.find((t) => t.id === tela.treinoId) : undefined;
 
   return (
     <div className="app">
@@ -112,7 +128,7 @@ export function App() {
         <button className="link marca" onClick={voltarAoInicio}>
           Academia
         </button>
-        <button className="link" onClick={() => void supabase?.auth.signOut()}>
+        <button className="link" onClick={() => void supabase()?.auth.signOut()}>
           Sair
         </button>
       </header>
@@ -131,25 +147,8 @@ export function App() {
           treinos={treinos}
           carregando={carregando}
           onComecar={(treinoId) => abrir({ nome: "sessao", treinoId })}
-          onEditar={(treinoId) => abrir({ nome: "editar", treinoId })}
-          onNovo={() => void novoTreino()}
         />
       )}
-
-      {tela.nome === "editar" &&
-        (treinoDaTela ? (
-          <EditorTreino
-            key={treinoDaTela.id}
-            treino={treinoDaTela}
-            onVoltar={() => {
-              void recarregar();
-              voltarAoInicio();
-            }}
-            onErro={setErro}
-          />
-        ) : (
-          <p className="suave">Treino não encontrado.</p>
-        ))}
 
       {tela.nome === "sessao" &&
         (treinoDaTela ? (

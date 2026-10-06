@@ -74,7 +74,6 @@ code {
 }
 
 /* Espaço para as barras fixas do rodapé não taparem o último botão. */
-.com-barra { padding-bottom: 96px; }
 .sessao { padding-bottom: 104px; }
 
 .topo {
@@ -174,8 +173,7 @@ label {
   color: var(--suave);
 }
 
-input,
-select {
+input {
   background: var(--fundo);
   color: var(--texto);
   border: 1px solid var(--borda);
@@ -187,10 +185,8 @@ select {
   min-width: 0;
   width: 100%;
 }
-select { appearance: none; background-image: none; }
 
 input:focus-visible,
-select:focus-visible,
 button:focus-visible {
   outline: 2px solid var(--acento);
   outline-offset: 2px;
@@ -241,8 +237,6 @@ button:disabled { opacity: 0.45; cursor: default; }
   padding: 8px 0;
   font-weight: 600;
 }
-.perigo, .link.perigo { color: var(--perigo); }
-
 .icone {
   min-width: 44px;
   min-height: 44px;
@@ -258,8 +252,6 @@ button:disabled { opacity: 0.45; cursor: default; }
   align-items: center;
   gap: 8px;
 }
-
-.acoes { display: flex; gap: 6px; }
 
 .acoes-exercicio {
   display: flex;
@@ -293,17 +285,6 @@ button:disabled { opacity: 0.45; cursor: default; }
   gap: 10px;
 }
 .item p { margin-top: 2px; }
-
-.item-principal {
-  flex: 1;
-  text-align: left;
-  background: none;
-  border: none;
-  padding: 2px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
 
 .botao-item {
   width: 100%;
@@ -339,59 +320,6 @@ button:disabled { opacity: 0.45; cursor: default; }
 .numeros strong {
   font-size: 1.6rem;
   line-height: 1.1;
-}
-
-/* ========================================================= editor de treino */
-
-.exercicio { padding: 14px; }
-
-.numero-exercicio {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--fundo);
-  border: 1px solid var(--borda);
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--suave);
-}
-
-.escolha {
-  display: flex;
-  gap: 10px;
-  align-items: flex-end;
-}
-.escolha label { flex: 1; }
-
-.miniatura {
-  width: 64px;
-  height: 64px;
-  object-fit: contain;
-  background: #fff;
-  border-radius: 10px;
-  flex: none;
-}
-
-.grade {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-}
-
-.barra-inferior {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 20;
-  max-width: var(--largura);
-  margin: 0 auto;
-  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-  background: color-mix(in srgb, var(--fundo) 94%, transparent);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid var(--borda);
 }
 
 /* =============================================================== a sessão */
@@ -535,6 +463,5 @@ details summary {
 /* ================================================================ tamanhos */
 
 @media (max-width: 380px) {
-  .grade { grid-template-columns: 1fr 1fr; }
   .numeros strong { font-size: 1.35rem; }
 }

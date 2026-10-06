@@ -16,7 +16,8 @@ export function Login() {
 
   async function enviar(evento: FormEvent) {
     evento.preventDefault();
-    if (!supabase) return;
+    const cliente = supabase();
+    if (!cliente) return;
     setOcupado(true);
     setMensagem("");
     setAviso("");
@@ -25,8 +26,8 @@ export function Login() {
       const credenciais = { email: email.trim(), password: senha };
       const { error, data } =
         modo === "entrar"
-          ? await supabase.auth.signInWithPassword(credenciais)
-          : await supabase.auth.signUp(credenciais);
+          ? await cliente.auth.signInWithPassword(credenciais)
+          : await cliente.auth.signUp(credenciais);
 
       if (error) {
         // A mensagem do Supabase vem em inglês; as duas mais comuns ganham tradução.
