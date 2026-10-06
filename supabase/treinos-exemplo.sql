@@ -15,13 +15,12 @@ a as (
 insert into public.academia_exercicios (user_id, treino_id, nome, series, reps, carga_kg, ordem, ref)
 select a.user_id, a.id, v.nome, v.series, 10, null, v.ordem, v.ref
 from a cross join (values
-  ('Supino reto (halteres)', 3, 0, 'Dumbbell_Bench_Press'),
+  ('Supino na máquina', 3, 0, 'Machine_Bench_Press'),
   ('Supino inclinado com halteres', 3, 1, 'Incline_Dumbbell_Press'),
   ('Crucifixo na polia', 3, 2, 'Cable_Crossover'),
   ('Desenvolvimento com halteres (ombros)', 3, 3, 'Dumbbell_Shoulder_Press'),
   ('Elevação lateral com halteres', 4, 4, 'Side_Lateral_Raise'),
-  ('Tríceps pulley (corda)', 3, 5, 'Triceps_Pushdown_-_Rope_Attachment'),
-  ('Tríceps testa', 3, 6, 'EZ-Bar_Skullcrusher')
+  ('Tríceps pulley (corda)', 3, 5, 'Triceps_Pushdown_-_Rope_Attachment')
 ) as v(nome, series, ordem, ref);
 
 with dono as (select id from auth.users where email = 'TROQUE-PELO-SEU-EMAIL@exemplo.com'),
