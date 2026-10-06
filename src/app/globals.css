@@ -519,6 +519,12 @@ details summary {
   user-select: none;
 }
 .contador-botao:active { background: var(--cartao-destaque); }
+/* O anel de foco ficava preso em volta do + depois do toque. Aqui o retorno
+   visual é o próprio número mudando; para o teclado sobra o fundo mais claro. */
+.contador-botao:focus-visible {
+  outline: none;
+  background: var(--cartao-destaque);
+}
 .contador-valor {
   flex: 1;
   background: none;
@@ -601,10 +607,6 @@ details summary {
 }
 
 /* ================================================================ tamanhos */
-
-@media (min-width: 480px) {
-  .contadores { grid-template-columns: 1fr 1fr; }
-}
 
 @media (max-width: 380px) {
   .grade { grid-template-columns: 1fr 1fr; }

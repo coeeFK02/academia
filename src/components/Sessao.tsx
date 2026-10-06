@@ -268,12 +268,14 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
   const anterior = exercicio ? ultimaVezDoExercicio(treino, exercicio.id, hoje) : null;
   const padrao = exercicio ? valorPadrao(treino, exercicio, sessao) : { reps: 10, carga: null };
 
-  const [reps, setReps] = useState<number>(padrao.reps);
   const [carga, setCarga] = useState<number | null>(padrao.carga);
 
-  // Trocou de exercício, ou mais uma série entrou: a sugestão acompanha.
+  // As repetições são as do plano do exercício e não se escolhem na hora; o que
+  // muda de uma série para a outra é a carga.
+  const repsDoPlano = exercicio?.reps ?? 0;
+
+  // Trocou de exercício, ou mais uma série entrou: a sugestão de carga acompanha.
   useEffect(() => {
-    setReps(padrao.reps);
     setCarga(padrao.carga);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exercicio?.id, feitas.length]);
@@ -341,7 +343,7 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
   async function marcarSerie() {
     if (!exercicio || feitas.length >= exercicio.series) return;
 
-    const repsFinal = Math.max(0, Math.min(1000, Math.round(reps)));
+    const repsFinal = Math.max(0, Math.min(1000, Math.round(exercicio.reps)));
     const cargaFinal = carga === null || !Number.isFinite(carga) ? null : Math.max(0, carga);
     const numero = feitas.length + 1;
     const provisoria: Serie = {
@@ -550,7 +552,7 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
           )}
 
           <p className="suave">
-            Série {Math.min(feitas.length + 1, exercicio.series)} de {exercicio.series} · meta {exercicio.reps} reps
+            Série {Math.min(feitas.length + 1, exercicio.series)} de {exercicio.series} · {exercicio.reps} repetições
           </p>
 
           {anterior && (
@@ -574,7 +576,6 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
           {feitas.length < exercicio.series ? (
             <>
               <div className="contadores">
-                <Contador rotulo="Repetições" valor={reps} passo={1} minimo={0} onMudar={(v) => setReps(v ?? 0)} />
                 <Contador
                   rotulo="Carga"
                   valor={carga}
@@ -587,7 +588,8 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
                 />
               </div>
               <button className="primario grande" onClick={() => void marcarSerie()}>
-                Marcar série {feitas.length + 1} · {reps} × {carga === null ? "sem carga" : `${carga} kg`}
+                Marcar série {feitas.length + 1} · {repsDoPlano} reps ×{" "}
+                {carga === null ? "sem carga" : `${carga} kg`}
               </button>
             </>
           ) : (
@@ -612,12 +614,6 @@ export function Sessao({ treino, aplicar, onSair, onErro }: Props) {
             )}
           </div>
         </section>
-      )}
-
-      {totalFeitas > 0 && (
-        <button className="primario grande" onClick={() => void concluir(true)}>
-          Concluir treino
-        </button>
       )}
 
       <section>
