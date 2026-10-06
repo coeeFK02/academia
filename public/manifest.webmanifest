@@ -1,0 +1,26 @@
+{
+  "name": "Academia",
+  "short_name": "Academia",
+  "description": "Treinos de musculação: as séries de cada dia e a carga de cada exercício.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e0f12",
+  "theme_color": "#0e0f12",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/icone.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icone.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
